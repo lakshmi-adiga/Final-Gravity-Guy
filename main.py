@@ -4,13 +4,13 @@ def appStarted(app):
     app.timerDelay = 10
     
     #background
-    app.bg = app.loadImage('Images/bg1.png')
-    app.bg2 = app.loadImage('Images/bg1.png')
+    app.bg = app.loadImage('bg1.png')
+    app.bg2 = app.loadImage('bg1.png')
     app.scrollX = 0
     app.pos1 = app.width/2
     
     #tiles
-    app.ogtile = app.loadImage('Images/tiles.png')
+    app.ogtile = app.loadImage('tiles.png')
     app.tile = app.scaleImage(app.ogtile, 1/3)
     app.multiplier = 0 # 48
     app.position = app.width
