@@ -1,5 +1,4 @@
 from cmu_112_graphics import *
-from terrain import *
 
 def appStarted(app):
     app.bg = app.loadImage('Images/bg1.png')

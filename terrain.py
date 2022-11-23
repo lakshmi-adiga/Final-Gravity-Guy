@@ -25,4 +25,4 @@ def redrawAll(app, canvas):
     #     canvas.create_image(xpos1, 3 * app.height/4,
     #                         image=ImageTk.PhotoImage(app.tile))
 
-runApp(width = 1500, height = 532)
+runApp(width = 1488, height = 532)
