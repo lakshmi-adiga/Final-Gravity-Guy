@@ -1,4 +1,5 @@
 from cmu_112_graphics import *
+from classes import *
 
 def appStarted(app):
     app.timerDelay = 1
@@ -13,6 +14,23 @@ def appStarted(app):
     app.ogtiles = app.loadImage("Images/tiles.png")
     app.tiles = app.scaleImage(app.ogtiles, 1/3)
     app.xpos = 12
+    
+    #creation of the app.chars list
+    app.ogcharstrip = app.loadImage("Images/running.png")
+    app.charstrip = app.scaleImage(app.ogcharstrip, 1/2) 
+    app.chars = []
+
+    for i in range(6):
+        char = app.charstrip.crop((i*55, 0, 55*(i+1), 65))
+        app.chars.append(char)
+    
+    app.charcopy = copy.copy(app.chars)
+    
+    for i in range(6):
+        app.chars.append(app.charcopy[5-i])
+        
+    app.charCounter = 0
+    app.isRunning = False
     
 def timerFired(app):
     #background 
