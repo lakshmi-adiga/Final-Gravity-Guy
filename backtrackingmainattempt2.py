@@ -38,6 +38,29 @@ class Player():
             self.ypos += 35
             self.image = self.charjumping[frame]
 
+    def died(self, obstacle):
+        if (self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24
+            and self.ypos > obstacle.ypos - obstacle.height * 24):
+                return True
+    
+    def dying(self, animation, frame):
+        if frame == 5:
+            self.image = animation[-1]
+        else:
+            self.image = animation[frame]
+    
+class Obstacle():
+    def __init__(self, xpos, ypos, width, height):
+        self.xpos = xpos
+        self.ypos = ypos
+        self.width = width
+        self.height = height 
+    
+    def drawObstacle(self, canvas, image, scrollX):
+        for j in range(self.height):
+            for i in range(self.width):
+                canvas.create_image(self.xpos + i*24 - scrollX, self.ypos - j*24, image=ImageTk.PhotoImage(image))
+
 def appStarted(app):
     app.timerDelay = 1
     app.timerCounter = 0
@@ -90,18 +113,36 @@ def appStarted(app):
     for frame in app.charrunning:
         insertframe = frame.transpose(Image.FLIP_TOP_BOTTOM)
         app.upsidedownrunning.append(insertframe)
-      
+    
+    #creation of dying animation
+    app.dyinganimation = []
+    app.ogdying = app.loadImage("Images/dyinganimation.png")
+    app.dying = app.scaleImage(app.ogdying, 1/2)
+    for i in range(6):
+        char = app.dying.crop((i*55, 0, 55*(i+1), 65))
+        app.dyinganimation.append(char)
+    
     #player
-    app.player = Player(app.width/16, app.height*4/5 - 40, app.charrunning, app.charjumping, app.upsidedownrunning)
+    app.player = Player(app.width/2, app.height*4/5 - 40, 
+                        app.charrunning, app.charjumping, 
+                        app.upsidedownrunning)
     app.standing = True
     app.running = False
     app.jumping = False
     app.isAbove = False
     app.isBelow = True
     
+    #obstacle
+    app.obstacle = Obstacle(app.width * 3/4, app.height * 4/5 - 24, 3, 4)
+    
     
 def timerFired(app):
     app.timerCounter += 1
+    #check if gameOver
+    if app.player.died(app.obstacle):
+        app.running = False
+        app.standing = True
+        app.player.dying(app.dyinganimation, app.timerCounter % 6)
     
     #background 
     app.scrollX += 10
@@ -168,4 +209,7 @@ def redrawAll(app, canvas):
     #player
     canvas.create_image(app.player.xpos - app.scrollX, app.player.ypos, image = ImageTk.PhotoImage(app.player.image))
      
+    #obstacle
+    app.obstacle.drawObstacle(canvas, app.tiles, app.scrollX)
+    
 runApp(width = 1500, height = 532)

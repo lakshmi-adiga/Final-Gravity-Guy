@@ -1,8 +1,35 @@
 from cmu_112_graphics import *
+import random
 
-def placeObstacle(obstacles, possibilitiesx, possibilitiesy):
-    pass
+#varmarker to save to github
+GithubSave = True
 
+def isLegal(obstacles, randompos, randomheight): # randompos = 
+    if (randompos, randomheight) in obstacles:
+        return False
+    
+
+#obstacle backtracking
+def placeObstacle(obstacles, maybex, maybey, level):
+    if level == 0:
+        return obstacles
+    else:
+        posy = maybey[random.randint(0, 1)]
+        if posy == 1:
+            posy = len(maybey) - 1
+            
+        randompos = (maybex[random.randint(0, len(maybex))],
+                     posy)
+        randomheight = random.randint(0, len(maybey) - 1)
+        if isLegal(obstacles, randompos, randomheight):
+            obstacles.append((randompos, randomheight))
+            solution = placeObstacle(obstacles, maybex, maybey, level - 1)
+            if solution != None:
+                return solution
+            else:
+                obstacles.remove((randompos, randomheight))
+        return None
+            
 class Obstacle():
     def __init__(self, xpos, ypos, width, height):
         self.xpos = xpos
@@ -51,6 +78,8 @@ class Player():
 def appStarted(app):
     app.timerDelay = 1
     app.timerCounter = 0
+    app.level = 2
+    
     #background
     app.bg = app.loadImage("Images/bg1.png")
     app.posX1 = app.width/2
@@ -123,7 +152,8 @@ def appStarted(app):
         j += 24
         
     app.obstacles = []
-    
+    app.finalobstacles = placeObstacle(app.obstacles, app.obstaclegridx, app.obstaclegridy, app.level)
+    print(app.finalobstacles)
 def timerFired(app):
     app.timerCounter += 1
     
