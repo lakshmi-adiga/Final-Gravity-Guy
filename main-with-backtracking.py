@@ -154,6 +154,7 @@ def appStarted(app):
     app.obstacles = []
     app.finalobstacles = placeObstacle(app.obstacles, app.obstaclegridx, app.obstaclegridy, app.level)
     print(app.finalobstacles)
+    
 def timerFired(app):
     app.timerCounter += 1
     

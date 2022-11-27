@@ -1,8 +1,20 @@
 from cmu_112_graphics import *
-import classes
-classes.Player()
 
-
+class Player():
+    def __init__(self, xpos, ypos, chars):
+        self.xpos = xpos
+        self.ypos = ypos
+        self.chars = chars
+        self.image = self.chars[0] 
+    
+    def isStanding(self):
+        self.image = self.chars[0]
+    
+    def isRunning(self, dx, frame):
+        charsList = copy.copy(self.chars)
+        charsList.pop(0)
+        self.xpos += dx
+        self.image = charsList[frame]
     
 # #make a player class to be integrated into the rest of the code
 
