@@ -12,7 +12,7 @@ class Player():
         self.dyingFrame = -1
         self.isdown = True
         self.isup = False
-        self.lives = [True, True, False]
+        self.lives = [True, True, True]
     
     def isStanding(self):
         self.image = self.charrunning[0]
@@ -44,7 +44,7 @@ class Player():
         self.isdown = False
     
     def isDownJump(self, dx, frame):
-        self.xpos += dx*1.3
+        self.xpos += dx*1.5
         if self.ypos < 385:
             self.ypos += 35
             self.image = self.charjumping[frame]
@@ -59,28 +59,37 @@ class Player():
             if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
                 return True
     
-    def killYourself(self, animation, height):
+    def killYourself(self, x, y,animation, height):
+        self.xpos = x
+        self.ypos = y
+        
         self.image = animation[0]
-        if self.ypos <= height - 40:
-            self.ypos += 10
+        if self.dyingFrame < 10:
+                self.image = animation[self.dyingFrame//2]
+                self.dyingFrame += 1
         else:
-            if self.dyingFrame < 10:
-                    self.image = animation[self.dyingFrame//2]
-                    self.dyingFrame += 1
-            else:
-                self.image = animation[5]
+            self.image = animation[5]
                 
-def isLegal(obstacles): #self, xpos, ypos, width, height
+    def restart(self, collidedobstacle): 
+        self.xpos = collidedobstacle.xpos - 200 #app width
+        self.ypos = 532*4/5 - 40 #app.height
+        self.image = self.charrunning[0]
+  
+#backtracking              
+def isLegal(obstacles, player): #self, xpos, ypos, width, height
     if len(obstacles) == 1:
         return True
     else:
         for element in obstacles:
-            for element1 in obstacles:
-                if element != element1:
+            if element.xpos <= player.xpos and player.xpos <= element.xpos + element.width * 24:
+                return False
+        for element1 in obstacles:
+            for element2 in obstacles:
+                if element1 != element2:
                     pass
                         
     
-def placeObstacles(obstacles, level, screenstart, screenwidth):
+def placeObstacles(obstacles, level, screenstart, screenwidth, player):
     if level == 0:
         return obstacles
     else:
@@ -93,7 +102,7 @@ def placeObstacles(obstacles, level, screenstart, screenwidth):
         insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(1, 4), random.randint(1, 8)) 
         obstacles.add(insert)
         
-        if isLegal(obstacles):
+        if isLegal(obstacles, player):
             pass
         # for move in possibleMoves:
         #     if move is legal:
@@ -115,6 +124,8 @@ class Obstacle():
         if self.ypos == 532/4 + 24:
             self.isup = True
             self.isdown = False
+        self.start = self.xpos
+        self.end = self.xpos + self.width * 24
     
     def drawObstacle(self, canvas, image, scrollX):
         if self.isdown == True:
@@ -126,6 +137,19 @@ class Obstacle():
                 for i in range(self.width):
                     canvas.create_image(self.xpos + i*24 - scrollX, self.ypos + j*24, image = ImageTk.PhotoImage(image))
 
+    def __hash__(self):
+        return(hash((self.xpos, self.ypos)))
+    
+    def __eq__(self, other):
+        if type(other) != Obstacle:
+            return False
+        else:
+            if self.xpos == other.xpos and self.ypos == other.ypos:
+                return True
+    #checks if there's enough space between two obstacles for the character to pass through them
+    def enoughDistance(self, other):
+        pass
+    
 #checks if app.player.lives is all False
 def isActuallyDead(player):
     for life in player.lives:
@@ -212,7 +236,9 @@ def appStarted(app):
     #obstacle
     app.obstacles = set()
     app.obstacles.add(Obstacle(3 * app.width/4, app.height/4 + 24, 3, 8))
-    app.obstacles.add(Obstacle(3*app.width/4 + 24 * 6, app.height * 4/5 - 24, 4, 3))
+    app.obstacles.add(Obstacle(3 * app.width/4 + 2, app.height * 4/5 - 24, 4, 3))
+    app.collidedobstacle = None
+    print(app.obstacles)
     
     #lives
     app.ogfullheart = app.loadImage("Images/fullheart.png")
@@ -222,7 +248,8 @@ def appStarted(app):
     
 def timerFired(app):
     app.timerCounter += 1
-
+    x = app.player.xpos
+    y = app.player.ypos
     #check if player has died
     if len(app.obstacles) != 0:
         for obstacle in app.obstacles:
@@ -230,6 +257,7 @@ def timerFired(app):
                 app.running = False
                 app.standing = True
                 app.isDead = True
+                app.collidedobstacle = obstacle
     
     #background 
     if app.isDead == False:
@@ -267,16 +295,22 @@ def timerFired(app):
             app.jumping = False
             app.isBelow = True
             app.isAbove = False
-    if app.standing == True and app.isDead == True and isActuallyDead(app.player) == False:
-        if app.player.image == app.charrunning[0]:
+            
+    if app.standing == True and app.isDead and isActuallyDead(app.player):
+        app.player.killYourself(x,y, app.dyinganimation, app.height)
+        
+    if app.standing == True and app.isDead == True and (isActuallyDead(app.player) == False):
+        app.isAbove = False
+        app.isBelow = True
+        app.player.restart(app.collidedobstacle)
+        
+        if app.player.image == app.charrunning[0]: #! THIS ONLY WORKS IF YOU GET IT TO RESTART IN THE FIRST PLACE
             app.player.lives.pop(0)
             app.player.lives.append(False)
         app.isDead = False
+        
     if isActuallyDead(app.player) == True:
         app.isDead = True
-    if app.standing == True and app.isDead == True and isActuallyDead(app.player):
-        app.isDead == True
-        app.player.killYourself(app.dyinganimation, app.height)
     
     # if app.player.image == app.dyinganimation[-1]:
     #     app.player.lives.pop(0)
