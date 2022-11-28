@@ -193,6 +193,7 @@ def appStarted(app):
     app.timerDelay = 1
     app.timerCounter = 0
     app.level = 4
+    app.points = 0
     
     #background
     app.bg = app.loadImage("Images/bg1.png")
@@ -280,6 +281,11 @@ def timerFired(app):
     app.timerCounter += 1
     x = app.player.xpos
     y = app.player.ypos
+    
+    #points
+    if isActuallyDead(app.player) == False:
+        if app.timerCounter % 10:
+            app.points += 1
     
     #check if player has died
     if len(app.obstacles) != 0:
@@ -371,6 +377,9 @@ def keyPressed(app, event):
             app.running = False
             app.jumping = True
     
+def mousePressed():
+    pass
+    
 def redrawAll(app, canvas):
     #background
     canvas.create_image(app.posX1 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
@@ -397,6 +406,9 @@ def redrawAll(app, canvas):
             canvas.create_image(app.width * 5/6 + j*75, app.height/8, image = ImageTk.PhotoImage(app.fullheart))
         if app.player.lives[j] == False:
             canvas.create_image(app.width * 5/6 + j * 75, app.height/8, image = ImageTk.PhotoImage(app.emptyheart))
+
+    #points
+    canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
 
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
