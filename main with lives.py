@@ -86,7 +86,9 @@ def isLegal(obstacles, player): #self, xpos, ypos, width, height
         for element1 in obstacles:
             for element2 in obstacles:
                 if element1 != element2:
-                    pass
+                    if element2.enoughDistance(element1) == False:
+                        return False
+        return True
                         
     
 def placeObstacles(obstacles, level, screenstart, screenwidth, player):
@@ -98,19 +100,23 @@ def placeObstacles(obstacles, level, screenstart, screenwidth, player):
             ypos = 532 * 4/5 - 24 #isdown
         if ypos == 1:
             ypos = 532/4 + 24 #isup
-            
-        insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(1, 4), random.randint(1, 8)) 
-        obstacles.add(insert)
+        
+        if obstacles == []:
+            insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(1, 4), random.randint(1, 6)) 
+        else:
+            start = obstacles[-1].xpos + (obstacles[-1].width + 2) * 24
+            insert = Obstacle(random.randint(start, int(start + screenwidth/8)), ypos, random.randint(1,4), random.randint(1,6))
+        
+        obstacles.append(insert)
         
         if isLegal(obstacles, player):
-            pass
-        # for move in possibleMoves:
-        #     if move is legal:
-        #         solution = placeObstacle(obstacles, level-1)
-        #         if solution != None:
-        #             return solution
-        #         *undo move*
-        # return None
+            solution = placeObstacles(obstacles, level - 1, screenstart, screenwidth, player)
+            if solution != None:
+                return solution
+            else:
+                obstacles.remove(insert)
+                
+        return None
     
 class Obstacle():
     def __init__(self, xpos, ypos, width, height):
@@ -146,9 +152,35 @@ class Obstacle():
         else:
             if self.xpos == other.xpos and self.ypos == other.ypos:
                 return True
+    def __repr__(self):
+        return f"Obstacle: {self.xpos, self.ypos}"
+            
     #checks if there's enough space between two obstacles for the character to pass through them
     def enoughDistance(self, other):
-        pass
+        selfrange = range(self.xpos - (10*24), self.xpos + (self.width+10)*24)
+        otherrange = range(other.xpos - (10*24), other.xpos + (other.width+10)*24)
+        
+        selfrange = set(selfrange)
+        otherrange = set(otherrange)
+        
+        intersect = selfrange & otherrange
+
+        if intersect != set():
+            return False
+        return True
+        
+        # if self.xpos in range(other.xpos - (10*24), other.xpos + (other.width+10)*24):
+        #     return False
+        # if self.xpos + self.width * 24 in range(other.xpos - (10*24), other.xpos + (other.width+10)*24):
+        #     return False
+        # if other.xpos in range(self.xpos - 240, self.xpos + (self.width+10)*24):
+        #     return False
+        # if other.xpos + other.width * 24 in range(self.xpos - 240, self.xpos + (self.width+10)*24):
+        #     return False
+        # if self.ypos == other.ypos:
+        #     if other.xpos + (15*24) < self.xpos and self.xpos < other.xpos + (other.width+15) * 24: #this controls the distance between the obstacles (the 5)
+        #         return False
+        # return True
     
 #checks if app.player.lives is all False
 def isActuallyDead(player):
@@ -160,7 +192,7 @@ def isActuallyDead(player):
 def appStarted(app):
     app.timerDelay = 1
     app.timerCounter = 0
-    app.level = 1
+    app.level = 4
     
     #background
     app.bg = app.loadImage("Images/bg1.png")
@@ -223,7 +255,7 @@ def appStarted(app):
     app.dyinganimation.append(app.empty)
     
     #player
-    app.player = Player(app.width/2, app.height*4/5 - 40, 
+    app.player = Player(app.width/4, app.height*4/5 - 40, 
                         app.charrunning, app.charjumping, 
                         app.upsidedownrunning)
     app.standing = True
@@ -234,11 +266,9 @@ def appStarted(app):
     app.isDead = False
     
     #obstacle
-    app.obstacles = set()
-    app.obstacles.add(Obstacle(3 * app.width/4, app.height/4 + 24, 3, 8))
-    app.obstacles.add(Obstacle(3 * app.width/4 + 2, app.height * 4/5 - 24, 4, 3))
+    app.obstacles = []
+    placeObstacles(app.obstacles, app.level, app.player.xpos + 400, app.width, app.player)
     app.collidedobstacle = None
-    print(app.obstacles)
     
     #lives
     app.ogfullheart = app.loadImage("Images/fullheart.png")
@@ -250,6 +280,7 @@ def timerFired(app):
     app.timerCounter += 1
     x = app.player.xpos
     y = app.player.ypos
+    
     #check if player has died
     if len(app.obstacles) != 0:
         for obstacle in app.obstacles:
@@ -264,8 +295,17 @@ def timerFired(app):
         app.scrollX += 10
     if app.width/2 + app.posX1 - app.scrollX <= 0:
         app.posX1 += app.width * 2 
+        
     if app.width/2 + app.posX2 - app.scrollX <= 0:
         app.posX2 += app.width * 2
+        
+    #obstacles
+    if app.timerCounter % 10 == 0:
+        placeObstacles(app.obstacles, app.level, int(app.player.xpos) + 400, int(app.player.xpos) + app.width, app.player)
+    
+    for obstacle in app.obstacles:
+        if obstacle.xpos + obstacle.width * 24 - app.scrollX < 0:
+            app.obstacles.remove(obstacle)
     
     #terrain
     if app.xpos + 24 * (int(app.width/24)-1) - app.scrollX <= 0:
@@ -332,35 +372,33 @@ def keyPressed(app, event):
             app.jumping = True
     
 def redrawAll(app, canvas):
-    # # GAME OVER SEQUENCE
-    # if app.isDead == True and app.player.dyingFrame >= 10:
-    #     canvas.create_rectangle(0, 0, app.width, app.height, fill = "black")
-    #     canvas.create_text(app.width/2, app.height/2, text = "GAME OVER", font = "Arial 72 bold", fill = "white")
-    # else:
-        #background
-        canvas.create_image(app.posX1 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
-        canvas.create_image(app.posX2 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
-        
-        #terrain
-        for i in range(int(app.width/24)):
-            xpos = app.xpos + 24 * i - app.scrollX
-            canvas.create_image(xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
-            canvas.create_image(xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
-            canvas.create_image(app.width - 12 + xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
-            canvas.create_image(app.width - 12 + xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
-        
-        #player
-        canvas.create_image(app.player.xpos - app.scrollX, app.player.ypos, image = ImageTk.PhotoImage(app.player.image))
-        
-        #obstacle
-        for obstacle in app.obstacles:
-            obstacle.drawObstacle(canvas, app.tiles, app.scrollX)
-            
-        #lives
-        for j in range(len(app.player.lives)):
-            if app.player.lives[j] == True:
-                canvas.create_image(app.width * 5/6 + j*75, app.height/8, image = ImageTk.PhotoImage(app.fullheart))
-            if app.player.lives[j] == False:
-                canvas.create_image(app.width * 5/6 + j * 75, app.height/8, image = ImageTk.PhotoImage(app.emptyheart))
+    #background
+    canvas.create_image(app.posX1 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
+    canvas.create_image(app.posX2 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
     
+    #terrain
+    for i in range(int(app.width/24)):
+        xpos = app.xpos + 24 * i - app.scrollX
+        canvas.create_image(xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
+        canvas.create_image(xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
+        canvas.create_image(app.width - 12 + xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
+        canvas.create_image(app.width - 12 + xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
+    
+    #player
+    canvas.create_image(app.player.xpos - app.scrollX, app.player.ypos, image = ImageTk.PhotoImage(app.player.image))
+    
+    #obstacle
+    for obstacle in app.obstacles:
+        obstacle.drawObstacle(canvas, app.tiles, app.scrollX)
+        
+    #lives
+    for j in range(len(app.player.lives)):
+        if app.player.lives[j] == True:
+            canvas.create_image(app.width * 5/6 + j*75, app.height/8, image = ImageTk.PhotoImage(app.fullheart))
+        if app.player.lives[j] == False:
+            canvas.create_image(app.width * 5/6 + j * 75, app.height/8, image = ImageTk.PhotoImage(app.emptyheart))
+
+    #GAME OVER SEQUENCE
+    if app.isDead == True and app.player.dyingFrame >= 10:
+        canvas.create_text(app.width/2, app.height/2, text = "GAME OVER", font = "Arial 72 bold", fill = "white")
 runApp(width = 1500, height = 532)
