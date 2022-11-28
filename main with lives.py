@@ -168,19 +168,6 @@ class Obstacle():
         if intersect != set():
             return False
         return True
-        
-        # if self.xpos in range(other.xpos - (10*24), other.xpos + (other.width+10)*24):
-        #     return False
-        # if self.xpos + self.width * 24 in range(other.xpos - (10*24), other.xpos + (other.width+10)*24):
-        #     return False
-        # if other.xpos in range(self.xpos - 240, self.xpos + (self.width+10)*24):
-        #     return False
-        # if other.xpos + other.width * 24 in range(self.xpos - 240, self.xpos + (self.width+10)*24):
-        #     return False
-        # if self.ypos == other.ypos:
-        #     if other.xpos + (15*24) < self.xpos and self.xpos < other.xpos + (other.width+15) * 24: #this controls the distance between the obstacles (the 5)
-        #         return False
-        # return True
     
 #checks if app.player.lives is all False
 def isActuallyDead(player):
