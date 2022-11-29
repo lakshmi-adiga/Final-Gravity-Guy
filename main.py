@@ -102,10 +102,10 @@ def placeObstacles(obstacles, level, screenstart, screenwidth, player):
             ypos = 532/4 + 24 #isup
         
         if obstacles == []:
-            insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(1, 4), random.randint(1, 6)) 
+            insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(2, 4), random.randint(2, 6)) 
         else:
             start = obstacles[-1].xpos + (obstacles[-1].width + 2) * 24
-            insert = Obstacle(random.randint(start, int(start + screenwidth/8)), ypos, random.randint(1,4), random.randint(1,6))
+            insert = Obstacle(random.randint(start, int(start + screenwidth/8)), ypos, random.randint(2,4), random.randint(2,6))
         
         obstacles.append(insert)
         
@@ -337,18 +337,13 @@ def timerFired(app):
         app.isBelow = True
         app.player.restart(app.collidedobstacle)
         
-        if app.player.image == app.charrunning[0]: #! THIS ONLY WORKS IF YOU GET IT TO RESTART IN THE FIRST PLACE
+        if app.player.image == app.charrunning[0]: 
             app.player.lives.pop(0)
             app.player.lives.append(False)
         app.isDead = False
         
     if isActuallyDead(app.player) == True:
         app.isDead = True
-    
-    # if app.player.image == app.dyinganimation[-1]:
-    #     app.player.lives.pop(0)
-    #     app.player.lives.append(False)
-    # THIS IS ALL COMMENTED OUT CUZ YOU HAVE TO MAKE THE ANIMATION FOR IT JUST LOSING A LIFE NOT JUST DYING
 
 def keyPressed(app, event):
     if app.isDead == False:
@@ -363,9 +358,6 @@ def keyPressed(app, event):
             app.standing = True
             app.running = False
             app.jumping = True
-    
-def mousePressed():
-    pass
     
 def redrawAll(app, canvas):
     #background
@@ -400,4 +392,5 @@ def redrawAll(app, canvas):
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
         canvas.create_text(app.width/2, app.height/2, text = "GAME OVER", font = "Arial 72 bold", fill = "white")
+
 runApp(width = 1500, height = 532)
