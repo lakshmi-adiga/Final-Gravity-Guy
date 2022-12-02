@@ -51,7 +51,9 @@ class Player():
         self.isdown = True
         self.isup = False
 
-    def died(self, obstacle):
+    def died(self, invincible, obstacle):
+        if invincible == True:
+            return False
         if self.isup and obstacle.isup:
             if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
                 return True
@@ -59,7 +61,7 @@ class Player():
             if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
                 return True
     
-    def killYourself(self, x, y,animation, height):
+    def killYourself(self, x, y, animation, height):
         self.xpos = x
         self.ypos = y
         
@@ -74,7 +76,6 @@ class Player():
         self.xpos = collidedobstacle.xpos - 200 #app width
         self.ypos = 532*4/5 - 40 #app.height
         self.image = self.charrunning[0]
-  
 
   
 #backtracking              
@@ -91,18 +92,6 @@ def isLegal(obstacles, player): #self, xpos, ypos, width, height
                     if element2.enoughDistance(element1) == False:
                         return False
         return True
-    
-#i think the powerups are a good idea, like invincibility and speed boosts
-#possibly him shooting at the obstacles to get rid of them
-#if its just a straight line would it still add to my 
-#algorithmic complexity 
-#that works for me
-#no, but i could add that in 
-# yea after some time the game does get laggy
-#i'm sorry the wifi is really slow, 
-#yea, should i just email that to you?
-#sounds good
-#would adding a start screen make it go beyond the MVP
 
 def placeObstacles(obstacles, level, screenstart, screenwidth, player):
     if level == 0:
@@ -196,17 +185,21 @@ def appStarted(app):
     app.points = 0
     
     #background
+    #! background image from https://www.shutterstock.com/search/parallax-game-background
     app.bg = app.loadImage("Images/bg1.png")
     app.posX1 = app.width/2
     app.posX2 = app.width/2 * 3
     app.scrollX = 0
     
     #terrain
+    #! terrain block image from https://opengameart.org/content/platformer-art-deluxe
     app.ogtiles = app.loadImage("Images/tiles.png")
     app.tiles = app.scaleImage(app.ogtiles, 1/3)
     app.xpos = 12
     
     #creation of the app.charrunning list for running animation
+    #! character spritesheet for all player image graphics is from
+    #! https://www.kindpng.com/imgv/woiTi_space-platformer-assets-astronaut-assets-hd-png-download/ 
     app.ogcharstrip = app.loadImage("Images/running.png")
     app.charstrip = app.scaleImage(app.ogcharstrip, 1/2)
     app.ogstanding = app.loadImage("Images/standing.png")
@@ -267,15 +260,25 @@ def appStarted(app):
     app.isDead = False
     
     #obstacle
+    #! obstacle tiles are the same as terrain tiles
     app.obstacles = []
     placeObstacles(app.obstacles, app.level, app.player.xpos + 400, app.width, app.player)
     app.collidedobstacle = None
     
     #lives
+    #! heart images are from https://www.shutterstock.com/video/clip-22752997-pixel-art-retro-game-style-red-hearts
     app.ogfullheart = app.loadImage("Images/fullheart.png")
     app.fullheart = app.scaleImage(app.ogfullheart, 1/4)
     app.ogemptyheart = app.loadImage("Images/emptyheart.png")
     app.emptyheart = app.scaleImage(app.ogemptyheart, 1/4)
+    
+    #invincibility graphics
+    #! star image is from http://clipart-library.com/clip-art/white-star-png-transparent-background-24.htm
+    app.ogstar = app.loadImage("Images/star.png")
+    app.star = app.scaleImage(app.ogstar, 1/16)
+    
+    #invincibility
+    app.invincible = False
     
 def timerFired(app):
     app.timerCounter += 1
@@ -290,13 +293,18 @@ def timerFired(app):
     #check if player has died
     if len(app.obstacles) != 0:
         for obstacle in app.obstacles:
-            if app.player.died(obstacle):
+            if app.player.died(app.invincible, obstacle):
                 app.running = False
                 app.standing = True
                 app.isDead = True
                 app.collidedobstacle = obstacle
+                
+    #! invincibility YOU GOTTA DO THIS
+    
     
     #background 
+    #! scrolling feature implemented here is of my own creation. I did not use
+    #! any outside sources to create it
     if app.isDead == False:
         app.scrollX += 10
     if app.width/2 + app.posX1 - app.scrollX <= 0:
@@ -402,6 +410,9 @@ def redrawAll(app, canvas):
     #points
     canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
 
+    #invincibility
+    canvas.create_image(app.width/2, app.height/2, image = ImageTk.PhotoImage(app.star))
+    
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
         canvas.create_text(app.width/2, app.height/2, text = "GAME OVER", font = "Arial 72 bold", fill = "white")
