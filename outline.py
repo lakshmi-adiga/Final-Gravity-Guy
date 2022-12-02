@@ -1,21 +1,26 @@
 
+#! FOR THE NEXT THREE DAYS ALL YOU NEED IS MAKING THE TERRAIN GO UP AND DOWN OK. Ok. 
+
 ################  UI/UX:
 
     #* Sprites
     #* Sidescrolling map
-    #TODO: Start/end screen
-    #TODO: Player lives
+    #? Start/end screen
+    #* Player lives
     #* Player dying
+    
+    #other types of obstacles
     
 ###############  Algorithmic Complexity
 
     #* Physics (player movement)
     #* OOP for player
     #* OOP for obstacles
-    #? Backtracking for obstacle viability
+    #* Backtracking for obstacle viability
+        # might not actually be backtracking check in with TA
     #* Flat terrain
-    #TODO: Speedboost powerup
-    #TODO: Invincibility powerup
+    #? Speedboost powerup
+    #? Invincibility powerup
     
 #Functions to write:
     #! OOP:

@@ -75,6 +75,8 @@ class Player():
         self.ypos = 532*4/5 - 40 #app.height
         self.image = self.charrunning[0]
   
+
+  
 #backtracking              
 def isLegal(obstacles, player): #self, xpos, ypos, width, height
     if len(obstacles) == 1:
@@ -89,8 +91,19 @@ def isLegal(obstacles, player): #self, xpos, ypos, width, height
                     if element2.enoughDistance(element1) == False:
                         return False
         return True
-                        
     
+#i think the powerups are a good idea, like invincibility and speed boosts
+#possibly him shooting at the obstacles to get rid of them
+#if its just a straight line would it still add to my 
+#algorithmic complexity 
+#that works for me
+#no, but i could add that in 
+# yea after some time the game does get laggy
+#i'm sorry the wifi is really slow, 
+#yea, should i just email that to you?
+#sounds good
+#would adding a start screen make it go beyond the MVP
+
 def placeObstacles(obstacles, level, screenstart, screenwidth, player):
     if level == 0:
         return obstacles
