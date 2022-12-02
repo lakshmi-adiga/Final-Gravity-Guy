@@ -171,6 +171,28 @@ class Obstacle():
             return False
         return True
     
+class Star():
+    def __init__(self, xpos, ypos):
+        self.xpos = xpos
+        self.ypos = ypos
+        if self.ypos == 532 * 4/5 - 24:
+            self.isup = False
+            self.isdown = True
+        if self.ypos == 532/4 + 24:
+            self.isup = True
+            self.isdown = False
+    
+    def isTouching(self, player):
+        if player.isup and self.isup:
+            if player.xpos > self.xpos and player.xpos < self.xpos + self.width * 24:
+                return True
+        if player.isdown and self.isdown:
+            if player.xpos > self.xpos and player.xpos < self.xpos + self.width * 24:
+                return True
+    
+    def drawStar(self, canvas, image, scrollX):
+        canvas.create_image(self.xpos - scrollX, self.ypos, image = ImageTk.PhotoImage(image))
+    
 #checks if app.player.lives is all False
 def isActuallyDead(player):
     for life in player.lives:
@@ -275,10 +297,18 @@ def appStarted(app):
     #invincibility graphics
     #! star image is from http://clipart-library.com/clip-art/white-star-png-transparent-background-24.htm
     app.ogstar = app.loadImage("Images/star.png")
-    app.star = app.scaleImage(app.ogstar, 1/16)
+    app.starimage = app.scaleImage(app.ogstar, 1/16)
     
     #invincibility
     app.invincible = False
+    app.starxpos = -1
+    app.starypos = random.randint(0, 1)
+    if app.starypos == 0:
+        app.starypos = 532 * 4/5 - 24 #isdown
+    if app.starypos == 1:
+        app.starypos = 532/4 + 24 #isup
+        
+    app.star = Star(app.width/2, app.starypos)
     
 def timerFired(app):
     app.timerCounter += 1
@@ -411,7 +441,7 @@ def redrawAll(app, canvas):
     canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
 
     #invincibility
-    canvas.create_image(app.width/2, app.height/2, image = ImageTk.PhotoImage(app.star))
+    app.star.drawStar(canvas, app.starimage, app.scrollX)
     
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
