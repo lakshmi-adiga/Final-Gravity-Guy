@@ -175,6 +175,7 @@ class Star():
     def __init__(self, xpos, ypos):
         self.xpos = xpos
         self.ypos = ypos
+        self.width = 2
         if self.ypos == 532 * 4/5 - 24:
             self.isup = False
             self.isdown = True
@@ -182,7 +183,7 @@ class Star():
             self.isup = True
             self.isdown = False
     
-    def isTouching(self, player):
+    def isTouchingPlayer(self, player):
         if player.isup and self.isup:
             if player.xpos > self.xpos and player.xpos < self.xpos + self.width * 24:
                 return True
@@ -190,8 +191,25 @@ class Star():
             if player.xpos > self.xpos and player.xpos < self.xpos + self.width * 24:
                 return True
     
+    def isTouchingObstacle(self, obstacle):
+        if self.isup and obstacle.isup:
+            if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
+                return True
+        if self.isdown and obstacle.isdown:
+            if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
+                return True
+    
+    #recursive placing star homemade algorithm  
+    def placeStar(self, player, width, obstacles):
+        self.xpos = random.randint(int(player.xpos + 400), int(player.xpos + width))
+        for obstacle in obstacles:
+            if self.isTouchingObstacle(obstacle):
+                self.placeStar(player, width, obstacles)
+        return True
+    
     def drawStar(self, canvas, image, scrollX):
         canvas.create_image(self.xpos - scrollX, self.ypos, image = ImageTk.PhotoImage(image))
+                
     
 #checks if app.player.lives is all False
 def isActuallyDead(player):
@@ -309,6 +327,7 @@ def appStarted(app):
         app.starypos = 532/4 + 24 #isup
         
     app.star = Star(app.width/2, app.starypos)
+    app.invincibletimer = 0
     
 def timerFired(app):
     app.timerCounter += 1
@@ -330,7 +349,18 @@ def timerFired(app):
                 app.collidedobstacle = obstacle
                 
     #! invincibility YOU GOTTA DO THIS
+    if app.points % 200 == 0:
+        app.star.placeStar(app.player, app.width, app.obstacles) 
+        
+    if app.star.isTouchingPlayer(app.player):
+        app.invincible = True 
+
+    if app.invincible == True:
+        app.invincibletimer += 1
     
+    if app.invincibletimer > 100:
+        app.invincible = False
+        app.invincibletimer = 0
     
     #background 
     #! scrolling feature implemented here is of my own creation. I did not use
@@ -441,7 +471,10 @@ def redrawAll(app, canvas):
     canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
 
     #invincibility
-    app.star.drawStar(canvas, app.starimage, app.scrollX)
+    if app.points % 200 > 0 and app.points % 200 < 199 and app.points > 200 and app.star.isTouchingPlayer(app.player) == False:
+        app.star.drawStar(canvas, app.starimage, app.scrollX)
+        
+    canvas.create_text(app.width * 4/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
     
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
