@@ -13,6 +13,7 @@ class Player():
         self.isdown = True
         self.isup = False
         self.lives = [True, True, True]
+        self.invincible = False
     
     def isStanding(self):
         self.image = self.charrunning[0]
@@ -51,8 +52,8 @@ class Player():
         self.isdown = True
         self.isup = False
 
-    def died(self, invincible, obstacle):
-        if invincible == True:
+    def died(self, obstacle):
+        if self.invincible == True:
             return False
         if self.isup and obstacle.isup:
             if self.xpos > obstacle.xpos and self.xpos < obstacle.xpos + obstacle.width * 24:
@@ -318,7 +319,6 @@ def appStarted(app):
     app.starimage = app.scaleImage(app.ogstar, 1/16)
     
     #invincibility
-    app.invincible = False
     app.starxpos = -1
     app.starypos = random.randint(0, 1)
     if app.starypos == 0:
@@ -326,8 +326,9 @@ def appStarted(app):
     if app.starypos == 1:
         app.starypos = 532/4 + 24 #isup
         
-    app.star = Star(app.width/2, app.starypos)
+    app.star = Star(app.starxpos, app.starypos)
     app.invincibletimer = 0
+    app.starisshown = False
     
 def timerFired(app):
     app.timerCounter += 1
@@ -342,7 +343,7 @@ def timerFired(app):
     #check if player has died
     if len(app.obstacles) != 0:
         for obstacle in app.obstacles:
-            if app.player.died(app.invincible, obstacle):
+            if app.player.died(obstacle):
                 app.running = False
                 app.standing = True
                 app.isDead = True
@@ -350,16 +351,18 @@ def timerFired(app):
                 
     #! invincibility YOU GOTTA DO THIS
     if app.points % 200 == 0:
-        app.star.placeStar(app.player, app.width, app.obstacles) 
+        app.star.placeStar(app.player, app.width, app.obstacles)
+        app.starisshown = True 
         
     if app.star.isTouchingPlayer(app.player):
-        app.invincible = True 
+        app.player.invincible = True 
+        app.starisshown = False
 
-    if app.invincible == True:
+    if app.player.invincible == True:
         app.invincibletimer += 1
     
     if app.invincibletimer > 100:
-        app.invincible = False
+        app.player.invincible = False
         app.invincibletimer = 0
     
     #background 
@@ -471,10 +474,11 @@ def redrawAll(app, canvas):
     canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
 
     #invincibility
-    if app.points % 200 > 0 and app.points % 200 < 199 and app.points > 200 and app.star.isTouchingPlayer(app.player) == False:
+    if app.points % 200 > 0 and app.points % 200 < 199 and app.points > 200 and app.starisshown:
         app.star.drawStar(canvas, app.starimage, app.scrollX)
-        
-    canvas.create_text(app.width * 4/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
+    
+    if app.invincibletimer > 0:
+        canvas.create_text(app.width * 2.5/5, app.height/8, text = f"Invincibility timer: {100 - app.invincibletimer}", font = "Arial 22 bold", fill = "white")
     
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
