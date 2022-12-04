@@ -349,7 +349,7 @@ def timerFired(app):
                 app.isDead = True
                 app.collidedobstacle = obstacle
                 
-    #! invincibility YOU GOTTA DO THIS
+    #! invincibility
     if app.points % 200 == 0:
         app.star.placeStar(app.player, app.width, app.obstacles)
         app.starisshown = True 
