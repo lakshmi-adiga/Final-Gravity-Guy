@@ -107,7 +107,7 @@ def placeObstacles(obstacles, level, screenstart, screenwidth, player):
         if obstacles == []:
             insert = Obstacle(random.randint(screenstart, screenwidth), ypos, random.randint(2, 4), random.randint(2, 6)) 
         else:
-            start = obstacles[-1].xpos + (obstacles[-1].width + 2) * 24
+            start = obstacles[-1].xpos + (obstacles[-1].width + 4) * 24
             insert = Obstacle(random.randint(start, int(start + screenwidth/8)), ypos, random.randint(2,4), random.randint(2,6))
         
         obstacles.append(insert)
@@ -140,11 +140,11 @@ class Obstacle():
         if self.isdown == True:
             for j in range(self.height):
                 for i in range(self.width):
-                    canvas.create_image(self.xpos + i*24 - scrollX, self.ypos - j*24, image=ImageTk.PhotoImage(image))
+                    canvas.create_image(self.xpos + i*24 - scrollX, self.ypos - j*24, image=getCachedPhotoImage(image))
         if self.isup == True:
             for j in range(self.height):
                 for i in range(self.width):
-                    canvas.create_image(self.xpos + i*24 - scrollX, self.ypos + j*24, image = ImageTk.PhotoImage(image))
+                    canvas.create_image(self.xpos + i*24 - scrollX, self.ypos + j*24, image = getCachedPhotoImage(image))
 
     def __hash__(self):
         return(hash((self.xpos, self.ypos)))
@@ -209,23 +209,61 @@ class Star():
         return True
     
     def drawStar(self, canvas, image, scrollX):
-        canvas.create_image(self.xpos - scrollX, self.ypos, image = ImageTk.PhotoImage(image))
-                
+        canvas.create_image(self.xpos - scrollX, self.ypos, image = getCachedPhotoImage(image))
+
+class Button():
+    def __init__(self, x1, y1, x2, y2, color, text):
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.color = color
+        self.text = text
+        self.textcolor = "black"
+        
+    def drawButton(self, canvas):
+        canvas.create_rectangle(self.x1, self.y1, self.x2, self.y2, fill = self.color)
+        canvas.create_text(abs(self.x1 + self.x2)/2, abs(self.y1 + self.y2)/2, text = self.text, fill = self.textcolor, font = "72")
     
-#checks if app.player.lives is all False
-def isActuallyDead(player):
+    def isPressed(self, x, y):
+        if x in range(min(int(self.x1), int(self.x2)), max(int(self.x1), int(self.x2))):
+            if y in range((min(int(self.y1), int(self.y2))), max(int(self.y1), int(self.y2))):
+                return True
+        return False
+        
+                
+####################################################
+# Main App
+####################################################            
+
+#caches images: taken from 15-112 Notes
+def getCachedPhotoImage(image):
+    # stores a cached version of the PhotoImage in the PIL/Pillow image
+    if ('cachedPhotoImage' not in image.__dict__):
+        image.cachedPhotoImage = ImageTk.PhotoImage(image)
+    return image.cachedPhotoImage
+
+
+#checks if app.player.lives is all False or if it hits the left Edge 
+def isActuallyDead(player, scrollX):
+    if player.xpos - scrollX < -12:
+        return True
     for life in player.lives:
         if life == True:
             return False
     return True
+
         
 def appStarted(app):
-    app.timerDelay = 1
+    app.mode = 'homeScreenMode'
+    app.timerDelay = 50
     app.timerCounter = 0
     app.level = 4
     app.points = 0
+    app.name = ""
+    app.highScore = [0, app.name]
     
-    #background
+    #game background
     #! background image from https://www.shutterstock.com/search/parallax-game-background
     app.bg = app.loadImage("Images/bg1.png")
     app.posX1 = app.width/2
@@ -241,6 +279,7 @@ def appStarted(app):
     #creation of the app.charrunning list for running animation
     #! character spritesheet for all player image graphics is from
     #! https://www.kindpng.com/imgv/woiTi_space-platformer-assets-astronaut-assets-hd-png-download/ 
+    
     app.ogcharstrip = app.loadImage("Images/running.png")
     app.charstrip = app.scaleImage(app.ogcharstrip, 1/2)
     app.ogstanding = app.loadImage("Images/standing.png")
@@ -330,15 +369,148 @@ def appStarted(app):
     app.invincibletimer = 0
     app.starisshown = False
     
-def timerFired(app):
+    #home screen
+    #! home screen background from https://www.dreamstime.com/rocket-flying-space-around-mars-flat-design-vector-illustration-rocket-flying-space-around-mars-image113221053 
+    app.homebg = app.loadImage("Images/homescreen.jpg")
+    
+    #counter for the home screen animation
+    app.homeCounter = 0
+    if app.mode == "homeScreenMode":
+        app.ogstrip = app.loadImage("Images/running.png")
+        app.homestrip = app.scaleImage(app.ogstrip, 2.5)
+        app.homerunning = []
+        for i in range(6):
+            char = app.homestrip.crop((i*275, 0, 275*(i+1), 325))
+            app.homerunning.append(char)
+        app.homecopy = copy.copy(app.homerunning)
+        for i in range(6):
+            app.homerunning.append(app.homecopy[5-i]) 
+        for j in range(6):
+            app.homerunning[j] = app.homerunning[j].transpose(Image.FLIP_LEFT_RIGHT)
+        
+    
+    #home screen buttons
+    app.start = Button(app.width * 18/24, app.height * 6.5/10, app.width * 23/24, app.height * 7.5/10, "white", "Start")
+    app.help = Button(app.width * 18/24, app.height * 8/10, app.width * 23/24, app.height * 9/10, "white", "Help")
+    
+    #help screen buttons
+    app.helpstart = Button(app.width * 3/7, app.height * 8/10, app.width * 4/7, app.height * 9/10, "white", "Start")
+    
+    #game mode return to home button
+    app.returntohome = Button(app.width * 2.5/7, app.height * 6.5/10, app.width * 4.5/7, app.height * 7.5/10, "white", "Return to Home")
+    
+########################################################
+# Home Screen
+########################################################
+
+def homePlayerAnimation(width, height, running, frame, canvas):
+    canvas.create_image(width * 20/24, height * 2.8/9, image = getCachedPhotoImage(running[frame]))
+
+def homeScreenMode_redrawAll(app, canvas):
+    canvas.create_rectangle(0, 0, app.width, app.height, fill = "#18384f")
+    canvas.create_image(app.width/2, app.height/2, image = getCachedPhotoImage(app.homebg))
+
+    app.start.drawButton(canvas)
+    app.help.drawButton(canvas)
+    canvas.create_text(app.width/6, app.height * 1/4, text = "Gravity", font = "Arial 100 bold", fill = "white")
+    canvas.create_text(app.width/6, app.height * 1/2, text = "Guy", font = "Arial 100 bold", fill = "white")
+    homePlayerAnimation(app.width, app.height, app.homerunning, int(app.homeCounter) % 6, canvas)
+    
+    if app.highScore[0] == 0:
+        canvas.create_text(app.width/6, app.height * 3/4, text = "Play for the", fill = "white", font = "Arial 30 bold")
+        canvas.create_text(app.width/6, app.height * 3.5/4, text = "highest score!", fill = "white", font = "Arial 30 bold")
+    else:
+        canvas.create_text(app.width/6, app.height * 3/4, text = f"Highscore: {app.highScore[0]}", fill = "white", font = "Arial 30 bold")
+        canvas.create_text(app.width/6, app.height * 3.5/4,  text = f"By {app.highScore[1]}", fill = "white", font = "Arial 30 bold")
+        
+def homeScreenMode_mousePressed(app, event):
+    if app.start.isPressed(event.x, event.y):
+        h = app.highScore[0]
+        n = app.highScore[1]
+        appStarted(app)
+        app.highScore[0] = h
+        app.highScore[1] = n
+        app.name = app.getUserInput("Put in your username!")
+        if app.name == None:
+            app.name = "Anonymous"
+        app.mode = "gameMode"
+        
+    if app.help.isPressed(event.x, event.y):
+        app.mode = "helpScreenMode"
+        
+def homeScreenMode_mouseMoved(app, event):
+    if app.start.isPressed(event.x, event.y):
+        app.start.color = "#18384f"
+        app.start.textcolor = "white"
+        app.start.text = "Input Name?"
+    else:
+        app.start.color = "white"
+        app.start.textcolor = "black"
+        app.start.text = "Start"
+    if app.help.isPressed(event.x, event.y):
+        app.help.color = "#18384f"
+        app.help.textcolor = "white"
+    else:
+        app.help.color = "white"
+        app.help.textcolor = "black"
+        
+def homeScreenMode_timerFired(app):
+    app.homeCounter += 1
+   
+########################################################
+# Help Mode
+########################################################
+
+def helpScreenMode_redrawAll(app, canvas):
+    canvas.create_rectangle(0, 0, app.width, app.height, fill = "#18384f")
+    app.helpstart.drawButton(canvas)
+    canvas.create_text(app.width/2, app.height/6, text = "Gravity Guy", fill = "white", font = "Arial 100 bold")
+    
+    canvas.create_text(app.width/2, app.height * 0.8/2, text = "You have 3 lives. Avoid the obstacles, hitting the obstacles will kill one of your lives.", fill = "white", font = "Arial 18 bold")
+    canvas.create_text(app.width/2, app.height * 0.95/2, text = "To start running, click the right arrow. To jump between terrains press up or down.", fill = "white", font = "Arial 18 bold")
+    canvas.create_text(app.width/2, app.height * 1.1/2, text = "After you jump, remember to click the right arrow again to continue running.", fill = "white", font = "Arial 18 bold")
+    canvas.create_text(app.width/2, app.height * 1.25/2, text = "If you're too slow and cross the left edge of the screen, it's game over. So keep running!", fill = "white", font = "Arial 18 bold")
+    canvas.create_text(app.width/2, app.height * 1.4/2, text = "If you see a star, jump to it! It's an invincibility star and you can run through obstacles for some time with it!",fill = "white", font = "Arial 18 bold")
+def helpScreenMode_mousePressed(app, event):
+    if app.helpstart.isPressed(event.x, event.y):
+        h = app.highScore[0]
+        n = app.highScore[1]
+        appStarted(app)
+        app.mode = "helpScreenMode"
+        app.highScore[0] = h
+        app.highScore[1] = n
+        app.name = app.getUserInput("Put in your username!")
+        if app.name == None:
+            app.name = "Anonymous"
+        app.mode = "gameMode"
+
+def helpScreenMode_mouseMoved(app, event):
+    if app.helpstart.isPressed(event.x, event.y):
+        app.helpstart.color = "#18384f"
+        app.helpstart.textcolor = "white"
+        app.helpstart.text = "Input Name?"
+    else:
+        app.helpstart.color = "white"
+        app.helpstart.textcolor = "black"
+        app.helpstart.text = "Start"
+    
+########################################################
+# Game Mode
+########################################################
+
+def gameMode_timerFired(app):
     app.timerCounter += 1
     x = app.player.xpos
     y = app.player.ypos
     
     #points
-    if isActuallyDead(app.player) == False:
+    if isActuallyDead(app.player, app.scrollX) == False:
         if app.timerCounter % 10:
             app.points += 1
+    
+    if app.points > app.highScore[0]:
+        app.highScore[0] = app.points
+        app.highScore[1] = app.name
     
     #check if player has died
     if len(app.obstacles) != 0:
@@ -349,7 +521,7 @@ def timerFired(app):
                 app.isDead = True
                 app.collidedobstacle = obstacle
                 
-    #! invincibility
+    #invincibility
     if app.points % 200 == 0:
         app.star.placeStar(app.player, app.width, app.obstacles)
         app.starisshown = True 
@@ -413,10 +585,10 @@ def timerFired(app):
             app.isBelow = True
             app.isAbove = False
             
-    if app.standing == True and app.isDead and isActuallyDead(app.player):
+    if app.standing == True and app.isDead and isActuallyDead(app.player, app.scrollX):
         app.player.killYourself(x,y, app.dyinganimation, app.height)
         
-    if app.standing == True and app.isDead == True and (isActuallyDead(app.player) == False):
+    if app.standing == True and app.isDead == True and (isActuallyDead(app.player, app.scrollX) == False):
         app.isAbove = False
         app.isBelow = True
         app.player.restart(app.collidedobstacle)
@@ -426,10 +598,10 @@ def timerFired(app):
             app.player.lives.append(False)
         app.isDead = False
         
-    if isActuallyDead(app.player) == True:
+    if isActuallyDead(app.player, app.scrollX) == True:
         app.isDead = True
 
-def keyPressed(app, event):
+def gameMode_keyPressed(app, event):
     if app.isDead == False:
         if (event.key == "Right"):
             app.standing = False
@@ -442,22 +614,34 @@ def keyPressed(app, event):
             app.standing = True
             app.running = False
             app.jumping = True
-    
-def redrawAll(app, canvas):
+
+def gameMode_mousePressed(app, event):
+    if app.returntohome.isPressed(event.x, event.y) and isActuallyDead(app.player, app.scrollX):
+        app.mode = "homeScreenMode"
+
+def gameMode_mouseMoved(app, event):
+    if app.returntohome.isPressed(event.x, event.y):
+        app.returntohome.color = "#78271c"
+        app.returntohome.textcolor = "white"
+    else:
+        app.returntohome.color = "white"
+        app.returntohome.textcolor = "black"
+
+def gameMode_redrawAll(app, canvas):
     #background
-    canvas.create_image(app.posX1 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
-    canvas.create_image(app.posX2 - app.scrollX, app.height/2, image=ImageTk.PhotoImage(app.bg))
+    canvas.create_image(app.posX1 - app.scrollX, app.height/2, image=getCachedPhotoImage(app.bg))
+    canvas.create_image(app.posX2 - app.scrollX, app.height/2, image=getCachedPhotoImage(app.bg))
     
     #terrain
     for i in range(int(app.width/24)):
         xpos = app.xpos + 24 * i - app.scrollX
-        canvas.create_image(xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
-        canvas.create_image(xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
-        canvas.create_image(app.width - 12 + xpos, app.height/4, image = ImageTk.PhotoImage(app.tiles))
-        canvas.create_image(app.width - 12 + xpos, app.height * 4/5, image = ImageTk.PhotoImage(app.tiles))
+        canvas.create_image(xpos, app.height/4, image = getCachedPhotoImage(app.tiles))
+        canvas.create_image(xpos, app.height * 4/5, image = getCachedPhotoImage(app.tiles))
+        canvas.create_image(app.width - 12 + xpos, app.height/4, image = getCachedPhotoImage(app.tiles))
+        canvas.create_image(app.width - 12 + xpos, app.height * 4/5, image = getCachedPhotoImage(app.tiles))
     
     #player
-    canvas.create_image(app.player.xpos - app.scrollX, app.player.ypos, image = ImageTk.PhotoImage(app.player.image))
+    canvas.create_image(app.player.xpos - app.scrollX, app.player.ypos, image = getCachedPhotoImage(app.player.image))
     
     #obstacle
     for obstacle in app.obstacles:
@@ -466,9 +650,9 @@ def redrawAll(app, canvas):
     #lives
     for j in range(len(app.player.lives)):
         if app.player.lives[j] == True:
-            canvas.create_image(app.width * 5/6 + j*75, app.height/8, image = ImageTk.PhotoImage(app.fullheart))
+            canvas.create_image(app.width * 5/6 + j*75, app.height/8, image = getCachedPhotoImage(app.fullheart))
         if app.player.lives[j] == False:
-            canvas.create_image(app.width * 5/6 + j * 75, app.height/8, image = ImageTk.PhotoImage(app.emptyheart))
+            canvas.create_image(app.width * 5/6 + j * 75, app.height/8, image = getCachedPhotoImage(app.emptyheart))
 
     #points
     canvas.create_text(app.width * 5/6 - 120, app.height/8, text = f"Score: {app.points}", font = "Arial 22 bold", fill = "white")
@@ -483,5 +667,6 @@ def redrawAll(app, canvas):
     #GAME OVER SEQUENCE
     if app.isDead == True and app.player.dyingFrame >= 10:
         canvas.create_text(app.width/2, app.height/2, text = "GAME OVER", font = "Arial 72 bold", fill = "white")
+        app.returntohome.drawButton(canvas)
 
 runApp(width = 1500, height = 532)
